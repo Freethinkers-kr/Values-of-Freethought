@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, user-scalable=no">
+  <link rel="stylesheet" href="css/normalize.min.css">
+  <link rel="stylesheet" href="css/style.min.css">
+  <script src="js/jquery-3.3.1.min.js"></script>
+  <title>자유사상가의 가치관</title>
+  <link rel="icon" href="favicon.ico">
+</head>
+<body>
+  <div id="content-wrap">
+    <article>
+      <div id="article-wrap">
+        <h1 id="title"></h1>
+        <p id="desc"></p>
+        <div id="select-wrap">
+          <input id="radio-1" name="radio-group" type="radio" value="1">
+          <label for="radio-1">thumb_down</label>
+          <input id="radio-2" name="radio-group" type="radio" value="2">
+          <label for="radio-2"></label>
+          <input id="radio-3" name="radio-group" type="radio" value="3">
+          <label for="radio-3">thumbs_up_down</label>
+          <input id="radio-4" name="radio-group" type="radio" value="4">
+          <label for="radio-4"></label>
+          <input id="radio-5" name="radio-group" type="radio" value="5">
+          <label for="radio-5">thumb_up</label>
+        </div>
+        <canvas id="result-canvas"></canvas>
+      </div>
+      <!-- article-wrap -->
+      <div id="right">
+        <button class="prev" onclick="prevContents()">keyboard_arrow_left</button>
+        <button class="next" onclick="nextContents()">keyboard_arrow_right</button>
+        <button class="result" onclick="resultContents()">결 과</button>
+      </div>
+    </article>
+  </div><!-- id="content-wrap" -->
+</body>
+<script src="data.js"></script>
+<script src="js/jQuery.s0.contentsLoad.min.js"></script>
+<script>initContents()</script>
+</html>
