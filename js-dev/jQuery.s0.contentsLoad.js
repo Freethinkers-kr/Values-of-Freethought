@@ -76,6 +76,7 @@ var barMargin = 10;
 function resultContents(){
   if(selectThisPage || !contents[contentsIndex].score){
     $('#result-canvas').show();
+    contentsIndex++;
     let barIndex = 0;
 
     $('#title').html("결과");
