@@ -39,12 +39,7 @@ article {
   line-height: 1.6;
   padding: 0.5rem;
 }
-#select-wrap {
-  margin: 0.5rem;
-  display: grid;
-  grid-template-columns: repeat(5, 20% [col-start]);
-}
-#right {
+#nav {
   position: absolute;
   height: 4rem;
   line-height: 4rem;

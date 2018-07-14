@@ -5,3 +5,4 @@ _site
 *.dev.*
 Gemfile
 Gemfile.*
+_config.yml
