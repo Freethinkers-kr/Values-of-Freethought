@@ -14,6 +14,7 @@
         navNext:   '#s0-quiz-nav-next',
         navPrev:   '#s0-quiz-nav-prev',
         navResult: '#s0-quiz-nav-result',
+        navReturn: '#s0-quiz-nav-return',
         shareFB:   '#s0-quiz-share-fb',
 
         canvas: '#s0-quiz-result-canvas',
@@ -29,7 +30,7 @@
     var $view = $(this);
     var isResult = false;
     var isDebug = false;
-    var $container, $wrapper, $title, $desc, $radio, $nav, $navNext, $navPrev, $navResult, $canvas, $shareFB;
+    var $container, $wrapper, $title, $desc, $radio, $nav, $navNext, $navPrev, $navResult, $canvas, $navReturn, $shareFB;
 
     // data variables
     var quizData;
@@ -169,6 +170,10 @@
       $wrapper = _create_element('div', opt.id.wrapper, $container);
       $canvas  = _create_element('canvas', opt.id.canvas, $wrapper);
       $nav = _create_element('div', opt.id.navbar, $container);
+      $navReturn = _create_element('a', opt.id.navReturn, $nav);
+      $navReturn.addClass('s0-btn');
+      $navReturn.html('처음으로');
+      $navReturn.attr('href', url.origin);
       $shareFB = _create_element('a', opt.id.shareFB, $nav);
       $shareFB.addClass('s0-btn');
       $shareFB.html('페이스북 공유');
