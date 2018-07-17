@@ -1,96 +1,95 @@
 // main: style.scss
-#s0-quiz-selector-wrap {
-  margin: 0.5rem;
-  display: grid;
-  grid-template-columns: repeat(5, 20% [col-start]);
-  .s0-radio {
-    display: none;
-    width: 2rem;
-    height: 2rem;
-    flex: 1;
-  }
-  .s0-label {
-    justify-self: center;
-    position: relative;
-    display: inline-block;
-    width: 2.5rem;
-    height: 2.5rem;
-    line-height: 2.5rem;
-    font-size: 1.6rem;
-    border-radius: 50%;
-    background: #1565C0;
+$nav-bg-color: #CE93D8;
+$nav-btn-bg-color: #8E24AA;
+
+$btn-float-size: 2.5rem;
+$btn-bg-color: #3949AB;
+$btn-tx-color: rgba(#FFF, 0.85);
+$btn-selected-bg-color: #E64A19;
+$btn-selected-tx-color: rgba(#FFF, 0.85);
+
+.s0-btn {
+  $size: $btn-float-size;
+  display: inline-block;
+  background: $btn-bg-color;
+  color:$btn-tx-color;
+  height: $size; line-height: $size;
+  padding: 0 0.5rem;
+  border-radius: 0.5rem;
+  text-decoration: none;
+  box-shadow: 0 3px 6px rgba(0,0,0,0.16), 0 3px 6px rgba(0,0,0,0.23);
+  &.s0-float {
     text-align: center;
-    box-shadow: 0 3px 6px rgba(0,0,0,0.16), 0 3px 6px rgba(0,0,0,0.23);
-    color: rgba(#FFF, 0.5);
-    font-family: 'Material Icons';
-  }
-  :checked + .s0-label {
-    color: transparent;
-    box-shadow: unset;
-    background: #AD1457;
-    &:after {
-      position: absolute;
-      color: rgba(#FFF, 0.5);
-      left: 0; top: 0;
-      width: 2.5rem;
-      height: 2.5rem;
-      line-height: 2.5rem;
-      content: 'done_outline';
-    }
-  }
-}
-
-#s0-quiz-nav-wrap {
-  button {
-    font-family: 'Material Icons';
-    color: #FFFFFF;
-    background: #006064;
-    border: unset;
-    width: 3rem;
-    height: 3rem;
-    line-height: 2rem;
-    font-size: 2rem;
+    padding: 0;
+    width: $size;
+    font-size: 0.6 * $size;
     border-radius: 50%;
-    box-shadow: 0 3px 6px rgba(0,0,0,0.16), 0 3px 6px rgba(0,0,0,0.23);
-    vertical-align: middle;
-    &:focus {
-      outline: unset;
-    }
   }
-  #s0-quiz-nav-prev {
-    float: left;
-    margin-top: 0.5rem;
-    margin-left: 0.5rem;
-  }
-  #s0-quiz-nav-next {
-    float: right;
-    margin-top: 0.5rem;
-    margin-right: 0.5rem;
-  }
-  #s0-quiz-nav-result {
-    float: right;
-    margin-top: 0.5rem;
-    margin-right: 0.5rem;
-    font-size: 1.4rem;
-    font-weight: bold;
-    width: 8rem;
-    border-radius: 1.5rem;
-    background: #AD1457;
-  }
-  #s0-quiz-nav-facebook {
-    font-size: 1.4rem;
-    font-weight: bold;
-    width: 8rem;
-    border-radius: 1.5rem;
+  &.disable {
+    background: #BDBDBD;
   }
 }
 
-#result-img {
-  display: block;
-  width: 90%;
-  margin: auto;
-  margin-top: 1rem;
-  align-items: center;
-  box-sizing: border-box;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
+
+#s0-quiz-warp {
+  width: 100%;
+  height: 100%;
+  position: relative;
+}
+#s0-quiz-contents-warp {
+  #s0-quiz-title,
+  #s0-quiz-desc {
+    margin: 0;
+    padding: 0.5rem;
+  }
+  #s0-quiz-radio {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr 1fr 1fr;
+    text-align: center;
+    align-items: center;
+    margin-top: 1rem;
+    justify-content: space-evenly;
+    justify-items: center;
+  }
+  .s0-radio {
+    position: relative;
+  }
+  .s0-radio.selected {
+    background: transparent;
+  }
+  .s0-radio.selected:after {
+    $size: $btn-float-size;
+    content: 'done';
+    width: $size; height: $size; line-height: $size;
+    position: absolute;
+    top: 0;left: 0;
+    display: inline-block;
+    border-radius: 50%;
+    font-size: 0.6 * $size;
+    background: $btn-selected-bg-color;
+  }
+  #s0-quiz-result-canvas {
+    width: 100%;
+  }
+}
+#s0-quiz-nav {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  background: $nav-bg-color;
+  .s0-btn {
+    background: $nav-btn-bg-color;
+    margin: 0.5rem;
+  }
+  #s0-quiz-nav-next { float: right }
+  #s0-quiz-nav-prev { float: left }
+  #s0-quiz-nav-result {
+    float: right; background: #424242;
+    &.disable {
+      background: #BDBDBD;
+    }
+  }
+  #s0-quiz-share-fb {
+    margin-left: 40%;
+    background: #303F9F;
+  }
 }

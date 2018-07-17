@@ -1,317 +1,439 @@
-/**
- * jQuery 기반 퀴즈 엔진
- * ====================
- * @author soma0sd <soma0sd@gmail.com>
- * @param {String} quiz_url - js file path or url
- * @param options
- */
 (function($){
-  $.fn.s0QuizLoad = function(quiz_url, options){
-    var settings = $.extend({
-      selector: {
-        title: '#title',
-        desc: '#desc',
-        canvas: '#result',
-        nav: '#nav',
-      },
-      view: {
-        width: 1200,
-        height: 600,
-      },
-      color: {
-        bar: ['#C62828', '#6A1B9A', '#303F9F', '#D81B60'],
-        info: '#00897B',
-      },
-      quiz: {
-        label: [
-          'thumb_down',
-          '',
-          'thumbs_up_down',
-          '',
-          'thumb_up'
-        ],
-        nav: {
-          prev: 'keyboard_arrow_left',
-          next: 'keyboard_arrow_right',
-          result: '결과 확인',
-          fbs: '공유'
-        },
-        checked: 'done_outline',
-        json_key: {
-          values: "values",
-          contents: "contents",
-        },
+  $.fn.S0Quiz = function(json_url, options){
+    var version = 'v0.10f';
+    var opt = $.extend({
+      id: {
+        wrapper: '#s0-quiz-warp',
+
+        content: '#s0-quiz-contents-warp',
+        title:   '#s0-quiz-title',
+        desc:    '#s0-quiz-desc',
+        radio:   '#s0-quiz-radio',
+
+        navbar:    '#s0-quiz-nav',
+        navNext:   '#s0-quiz-nav-next',
+        navPrev:   '#s0-quiz-nav-prev',
+        navResult: '#s0-quiz-nav-result',
+        shareFB:   '#s0-quiz-share-fb',
+
+        canvas: '#s0-quiz-result-canvas',
       },
       facebook: {
-        appID: '1982488155103997',
-        version: 'v3.0',
+        AppID: '2160017247578704',
+        testAppID: '650644625328419',
       }
     }, options);
-    // jQuery Dom
-    var $view     = $(this);
-    var $title    = $(settings.selector.title);
-    var $desc     = $(settings.selector.desc);
-    var $result   = $(settings.selector.canvas);
-    var $selector = $(init_quiz_selector()).appendTo(this);
 
-    var _$navElems = init_nav_wrap();
-    var $nav = $(_$navElems.wrap).appendTo(settings.selector.nav);
-    var $navBtns  = {
-      prev: $(_$navElems.btns.prev),
-      next: $(_$navElems.btns.next),
-      result: $(_$navElems.btns.result),
-      fbs: $(_$navElems.btns.fbs)
-    };
+    // document variables
+    var url = window.location;
+    var $view = $(this);
+    var isResult = false;
+    var isDebug = false;
+    var $container, $wrapper, $title, $desc, $radio, $nav, $navNext, $navPrev, $navResult, $canvas, $shareFB;
 
-    // quiz variables
-    var quizLim;
-    var quizIndex;
-    var pageLim;
-    var pageIndex;
-    var quizUserSelect;
-    var quizUserValues;
-    var quizSelectRatio = [-1, -0.5, 0, 0.5, 1];
-    var quizValues;
-    var quizContents;
-    var isUserSelected = false;
-    // set canvas variables
-    var canvas = $result[0].getContext('2d');
-    // set bar variables
-    var barVstart  = 0;
-    var barVend    = settings.view.height * 0.9;
-    var barVMargin = 20;
-    var barHStart = settings.view.width * 0.01;
-    var barHEnd   = settings.view.width * 0.99;
-    var barColorArr = settings.color.bar;
-    // info box variables
-    var infoBoxHeight = settings.view.height * 0.2;
-    var infoBoxVStart = settings.view.height * 0.9;
+    // data variables
+    var quizData;
+    var quizContentsIndex;
+    var quizLimIndex;
+    var quizSelectData = {};
 
-    var resultDataURL;
+    // in quiz variables
+    var isSelected;
+    var isQuiz;
+    var nowSelect;
 
-    // main init
-    $selector.hide();
-    $result.hide();
-    $nav.hide();
-    $.getJSON(quiz_url, function(data){
-      quizValues = data[settings.quiz.json_key.values];
-      quizContents = data[settings.quiz.json_key.contents];
-      main();
-    })
-    .fail(function(request,status,error){
-      console.log( "code:"+request.status+"\n"+"message:"+request.responseText+"\n"+"error:"+error);
-    });
+    // in result variables
+    var valuesData = {};
+    var colors = ['#C62828', '#6A1B9A', '#303F9F', '#D81B60'];
 
-    // main function
-    function main(){
-      let urlParam = window.location.search.substring(1).split('&');
-      if(urlParam && urlParam[0] == "result"){
-        result(urlParam);
+    // result canvas variables
+    var canvas = {width: 1600, height: 800};
+
+    // facebook variables
+    var appId;
+
+    // main
+    _load_json(json_url, function(data){
+      let urlParam = url.search.substring(1);
+      quizData = data;
+      if(url.protocol == "file:" || url.hostname == 'localhost'){
+        appID = opt.facebook.testAppID;
+        isDebug = true;
+        console.log('debug mode');
+        console.log('@ URL data:');
+        console.log(url);
+        console.log('@ DB from ['+ json_url +']');
+        console.log(quizData);
       } else {
-        init_quiz_show();
+        appID = opt.facebook.AppID;
       }
-    }
-
-    // fuctions
-    function init_quiz_show(){
-      pageIndex = 0;
-      pageLim = quizContents.length;
-
-      quizIndex = 0;
-      quizLim = 0;
-      $.each(quizContents, function(i,v){
-        if(v.score){quizLim++}
-      });
-
-      quizUserSelect = {};
-      show_quiz_page();
-    }
-    function init_quiz_selector(){
-      let $wrap = $('<div id="s0-quiz-selector-wrap"></div>');
-      let labelText = settings.quiz.label;
-      for (var i = 0; i < 5; i++) {
-        let $input = $('<input class="s0-radio" id="s0-radio-' + (i+1) + '" type="radio" value="' + i + '" name="s0-quiz-selector">');
-        let $label = $('<label class="s0-label" for="s0-radio-' + (i+1) + '">' + labelText[i] + '</label>');
-        $wrap.append($input);
-        $wrap.append($label);
+      if(urlParam.length > 0){
+        isResult = true;
+        init_result_data();
+        init_result_layout();
+        draw_result_canvas();
+        init_result_events();
+      } else {
+        isResult = false;
+        init_quiz_layout();
+        init_quiz_events();
       }
-      return $wrap;
-    }
-    function init_nav_wrap(){
-      let $wrap   = $('<div id="s0-quiz-nav-wrap"></div>');
-      let $button = {
-        prev: $('<button id="s0-quiz-nav-prev">' + settings.quiz.nav.prev + '</button>'),
-        next: $('<button id="s0-quiz-nav-next">' + settings.quiz.nav.next + '</button>'),
-        result: $('<button id="s0-quiz-nav-result">' + settings.quiz.nav.result + '</button>'),
-        fbs: $('<button id="s0-quiz-nav-facebook">' + settings.quiz.nav.fbs + '</button>')
-      };
-      $wrap.append($button.prev);
-      $wrap.append($button.next);
-      $wrap.append($button.result);
-      $wrap.append($button.fbs);
-      return {
-        wrap: $wrap,
-        btns: {
-          prev: $button.prev,
-          next: $button.next,
-          result: $button.result,
-          fbs: $button.fbs
+    });
+
+    // functions
+    function init_quiz_layout(){
+      let btnCls01 = '.s0-btn';
+      let btnCls02 = '.s0-btn.s0-float.s0-nav';
+      let btnCls03 = '.s0-btn.s0-float.s0-radio';
+      let btnCls04 = '.s0-btn.s0-result';
+      quizContentsIndex = 0;
+      isSelected = false;
+      $container = _create_element('div', opt.id.wrapper, $view);
+
+      $wrapper = _create_element('div', opt.id.content, $container);
+      $title   = _create_element('h1', opt.id.title, $wrapper);
+      $desc    = _create_element('p', opt.id.desc, $wrapper);
+      $radio   = _create_element('div', opt.id.radio, $wrapper);
+      $radio.css('font-family', '"Material Icons"');
+      for(let i=0; i < 5; i++){
+        let nameID = opt.id.radio + "-item-" + i + btnCls03;
+        let item = _create_element('a', nameID, $radio);
+        switch (i) {
+          case 0: item.html('thumb_down');break;
+          case 2: item.html('thumbs_up_down');break;
+          case 4: item.html('thumb_up');break;
         }
-      };
+        item.attr('data', i);
+      }
+
+      $nav = _create_element('div', opt.id.navbar, $container);
+      $navNext = _create_element('a', opt.id.navNext + btnCls02 + '.disable.next', $nav);
+      $navPrev = _create_element('a', opt.id.navPrev + btnCls02 + '.prev', $nav);
+      $navResult = _create_element('a', opt.id.navResult + btnCls04 + '.disable', $nav);
+      $nav.css('font-family', '"Material Icons"');
+      $navNext.html('keyboard_arrow_right');
+      $navPrev.html('keyboard_arrow_left');
+      $navResult.html('done_outline 결과 보기');
+
+      set_quiz_contents();
     }
-
-    function show_quiz_page() {
-      let contents = quizContents[pageIndex];
-
-      if(contents.title){$title.html(contents.title)}
-      else{$title.html('문제: '+ quizIndex + ' / ' + quizLim)}
-
-      if(contents.score){$selector.show()}
-      else{$selector.hide()}
-      $('.s0-radio:checked').prop("checked",false);
-
-      if(contents.desc){$desc.html(contents.desc)}
-
-      if(pageIndex == 0){$navBtns.prev.hide()}
-      else{$navBtns.prev.show()}
-
-      if(pageIndex == pageLim-1){$navBtns.next.hide()}
-      else{$navBtns.next.show()}
-
-      if(pageIndex == pageLim-1){$navBtns.result.show()}
-      else{$navBtns.result.hide()}
-      $nav.show();
-    }
-
-    function result(urlParam){
-      quizUserSelect = {};
-      quizUserValues = {};
-      $title.hide();
-      $.each(urlParam, function(){
-        let item = this.split('=');
-        if(item.length > 1){
-          quizUserSelect[item[0]] = item[1];
+    function init_quiz_events(){
+      $navNext.click(function(){
+        if(isSelected || !isQuiz){
+          quizContentsIndex++; set_quiz_contents();
         }
       });
-      $.each(quizValues, function(key, val){
-        quizUserValues[key] = {
-          point: 0,
-          name: val,
-          percent: 0,
-          ratio: 0,
-          lim: 0
+      $navPrev.click(function(){
+        quizContentsIndex--; set_quiz_contents();
+      });
+      $('.s0-btn.s0-radio').click(function(){
+        isSelected = true;
+        quizSelectData[quizContentsIndex] = $(this).attr('data');
+        $('.s0-btn.s0-radio').removeClass('selected');
+        $('.s0-nav.next').removeClass('disable');
+        $(this).addClass('selected');
+        if(isDebug){
+          console.log("[" + quizContentsIndex + "] selected: " + $(this).attr('data'));
+          console.log('@ now selected data:');
+          console.log(quizSelectData);
+        }
+        if(quizContentsIndex == (quizLimIndex-1)){
+          $navResult.removeClass('disable');
+          $navResult.attr('href', _get_result_url());
+        }
+      });
+    }
+
+    function init_result_layout(){
+      $('body').prepend(`
+        <script>
+        window.fbAsyncInit = function() {
+          FB.init({
+            appId            : `+ appID +`,
+            autoLogAppEvents : true,
+            xfbml            : true,
+            version          : 'v3.0'
+          });
         };
-      });
-      let ratioMax = quizSelectRatio[4];
-      $.each(quizUserSelect, function(key, val){
-        let values = quizContents[key].score;
-        let ratio  = quizSelectRatio[parseInt(val)];
-        $.each(values, function(name, point){
-          let nowPoint = parseFloat(point);
-          quizUserValues[name].lim += Math.abs(ratioMax * nowPoint);
-          quizUserValues[name].point += ratio * nowPoint;
-        });
-      });
 
-      $result.attr('width', settings.view.width);
-      $result.attr('height', settings.view.height);
-      canvas.clearRect(0, 0, settings.view.width, settings.view.height);
-      let barIndex = 0;
-      $.each(quizUserValues, function(key, val){
-        let values = quizUserValues[key];
-        values.percent = (100 * (val.lim + val.point) / (val.lim * 2)).toFixed(1)+"%";
-        values.ratio = (val.lim + val.point) / (val.lim * 2);
-        _draw_bar(barIndex, values);
-        barIndex++;
+        (function(d, s, id){
+           var js, fjs = d.getElementsByTagName(s)[0];
+           if (d.getElementById(id)) {return;}
+           js = d.createElement(s); js.id = id;
+           js.src = "https://connect.facebook.net/en_US/sdk.js";
+           fjs.parentNode.insertBefore(js, fjs);
+         }(document, 'script', 'facebook-jssdk'));
+        </script>
+      `);
+      $container = _create_element('div', opt.id.content, $view);
+      $wrapper = _create_element('div', opt.id.wrapper, $container);
+      $canvas  = _create_element('canvas', opt.id.canvas, $wrapper);
+      $nav = _create_element('div', opt.id.navbar, $container);
+      $shareFB = _create_element('a', opt.id.shareFB, $nav);
+      $shareFB.addClass('s0-btn');
+      $shareFB.html('페이스북 공유');
+    }
+    function init_result_data(){
+      let dataParam = url.search.substring(1).split('&');
+      let quiz = quizData.contents;
+      let counter = 0;
+      $.each(quizData.values, function(key, val){
+        valuesData[key] = {};
+        valuesData[key]['name'] = val;
+        valuesData[key]['point'] = 0;
+        valuesData[key]['max'] = 0;
+        valuesData[key]['ratio'] = 0;
+        valuesData[key]['color'] = '';
       });
-      resultDataURL = $result[0].toDataURL();
-      let $img = $('<img id="result-img">');
-      $img.attr('src',resultDataURL);
-      $view.append($img);
-      $navBtns.next.hide();
-      $navBtns.prev.hide();
-      $navBtns.result.hide();
-      $nav.show();
+      $.each(dataParam, function(){
+        if(this != 'result'){
+          let items = this.split('=');
+          let index  = parseInt(items[0]);
+          let select = (parseFloat(items[1]) - 2) / 2;
+          $.each(quiz[index].score, function(key,val){
+            valuesData[key]['point'] += select * parseFloat(val);
+            valuesData[key]['max'] += Math.abs(parseFloat(val));
+          });
+        }
+      });
+      $.each(valuesData, function(key,val){
+        let ratio = (val.point + val.max) / (val.max * 2);
+        valuesData[key]['ratio'] = ratio;
+        valuesData[key]['color'] = colors[counter++ % colors.length];
+      });
+      if(isDebug){
+        console.log('result-selected data:');
+        console.log(valuesData);
+      }
+    }
+    function init_result_events(){
+      $shareFB.click(function(){
+        let href;
+        let msg = '';
+        $.each(valuesData, function(key, val){
+          msg += val.name + ': '
+          msg += (val.ratio * 100).toFixed(1) + ' %\n' ;
+        });
+        if(isDebug){
+          href = 'https://freethinkers-kr.github.io/';
+          href += 'Values-of-Freethought/';
+          href += url.search;
+        } else {
+          href = url.href;
+        }
+        FB.ui({
+          name: '자유사상 가치척도',
+          method: 'share',
+          hashtag: '#Freethink_Values',
+          href:  href,
+          quote: msg,
+        }, function(response){console.log(response)});
+        if(isDebug){console.log(msg)}
+      });
     }
 
-    function _draw_bar(index, values){
-      let Height  = (barVend - barVstart - infoBoxHeight- barVMargin) / Object.keys(quizValues).length;
-      let x0 = barHStart;
-      let y0 = barVMargin + index * (Height + barVMargin);
-      let dx = barHEnd - barHStart;
-      let dy = Height;
-      let dr = dy / 2;
-      let px = dx * values.ratio;
-      let fontSize = dr;
-      canvas.save();
-      canvas.beginPath();
-      canvas.moveTo(x0 + dr ,y0);
-      canvas.lineTo(x0 + dx - dr, y0);
-      canvas.quadraticCurveTo(x0+dx, y0, x0+dx, y0+dr);
-      canvas.quadraticCurveTo(x0+dx, y0+dy, x0+dx-dr, y0+dy);
-      canvas.lineTo(x0 + dx - dr, y0+dy);
-      canvas.lineTo(x0 + dr, y0+dy);
-      canvas.quadraticCurveTo(x0, y0+dy, x0, y0+dr);
-      canvas.quadraticCurveTo(x0, y0, x0+dr, y0);
-      canvas.fill();
-      canvas.clip();
-      canvas.fillStyle = "#111111";
-      canvas.fillRect(x0, y0, dx, dy);
-      canvas.fillStyle = barColorArr[index % barColorArr.length];
-      canvas.fillRect(x0, y0, px, dy);
-      canvas.font = 'bold '+fontSize+'px "Gothic A1"';
-      canvas.fillStyle = "#FAFAFA";
-      canvas.textAlign = 'left';
-      canvas.fillText(values.name, x0+dr, y0+dy-(fontSize/5));
-      canvas.textAlign = 'right';
-      canvas.font = 'bold '+(fontSize*0.7)+'px "Gothic A1"';
-      canvas.fillText(values.percent, x0+(dx*0.98), y0+(dy/2)+(fontSize*0.35));
-      canvas.restore();
+    function set_quiz_contents(){
+      isSelected = false;
+      let quizContents = quizData.contents[quizContentsIndex];
+      quizLimIndex = quizData.contents.length;
+      $('.s0-radio').removeClass('selected');
+      $desc.html(quizContents.desc);
+      if(quizContents.score){
+        isQuiz = true;
+        $navNext.addClass('disable');
+        let title = '[' + quizContentsIndex + '/' + (quizLimIndex-1) + ']'
+        if(quizContents.title){title += quizContents.title}
+        $title.html(title);
+        $radio.show();
+      } else {
+        isQuiz = false;
+        $navNext.removeClass('disable');
+        $title.html(quizContents.title);
+        $radio.hide();
+      }
+      if(quizContentsIndex == 0){
+        $navPrev.hide(); $navNext.show(); $navResult.hide();
+      } else if (quizContentsIndex == quizLimIndex-1) {
+        $navPrev.show(); $navNext.hide(); $navResult.show();
+      } else {
+        $navPrev.show(); $navNext.show(); $navResult.hide();
+      }
+    }
+    function draw_result_canvas(){
+      let counter = 0;
+      let b_margin = 15;
+      let b_y0 = canvas.height * 0.2;
+      let b_yf = canvas.height;
+      let b_dy = (b_yf - b_y0) / Object.keys(valuesData).length;
+      let b_x0 = canvas.width * 0.08;
+      let b_xf = canvas.width * 0.95;
+      let b_dx = b_xf - b_x0;
+
+      let i_y0 = 0;
+      let i_yf = b_y0;
+      let i_x0 = 0;
+      let i_xf = canvas.width;
+
+      $canvas.attr('width', canvas.width);
+      $canvas.attr('height', canvas.height);
+      let ctx = $canvas[0].getContext('2d');
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      _draw_info_bar(ctx, i_x0, i_y0, i_xf, i_yf);
+      $.each(valuesData, function(key, val){
+        let y0 = b_y0 + (b_dy * counter) + b_margin;
+        let dy = b_dy - (b_margin * 2);
+        _draw_values_bar(ctx, b_x0, y0, b_dx, dy, key, val);
+        counter++;
+      });
     }
 
-    // events
-    $($selector.find('.s0-radio')).click(function(){
-      isUserSelected = true;
-      quizUserSelect[pageIndex] = this.value;
-    });
-    $navBtns.prev.click(function(){
-      if(!quizContents[pageIndex].score || isUserSelected){
-        if(quizContents[pageIndex].score){quizIndex--}
-        pageIndex--;
-        show_quiz_page();
-      }
-    });
-    $navBtns.next.click(function(){
-      if(!quizContents[pageIndex].score || isUserSelected){
-        pageIndex++;
-        if(quizContents[pageIndex].score){quizIndex++}
-        show_quiz_page();
-      }
-    });
-    $navBtns.result.click(function(){
-      if(!quizContents[pageIndex].score || isUserSelected){
-        let baseurl = $(location).attr('href');
-        let param = "?result";
-        $.each(quizUserSelect, function(k, v){
-          param += "&" + k + "=" + v;
-        });
-        window.location.href = baseurl + param;
-      }
-    });
-    $navBtns.fbs.click(function(){
-      let msg = '';
-      $.each(quizUserValues, function(key, val){
-        msg += val.name + "\n";
+    // sub functions
+    function _create_element(tag, selector, target=null){
+      let prop = selector.split('.'),
+          elem = $('<'+tag+'>'),
+          id   = '',
+          cls  = '';
+      $.each(prop, function(i, val){
+        if (val.indexOf('#') >= 0){
+          id += val.replace(/^#/, '');
+        } else {
+          cls += val + ' ';
+        }
       });
-      console.log(msg);
-      FB.ui({
-        method: 'share',
-        name: '자유사상 가치척도',
-        display: 'popup',
-        hashtag: '#Freethink_N-Values',
-        quote: msg,
-        description: msg
-      }, function(response){console.log(response)});
-    });
-  }
-}(jQuery));
+      if (id.length) elem.attr('id', id);
+      if (cls.length) elem.attr('class', cls.trim());
+      if (target) {
+        return elem.appendTo(target);
+      } else {
+        return elem
+      }
+    }
+    function _load_json(url, callback){
+      $.getJSON(url, function(data){
+        callback(data);
+      })
+      .fail(
+        function(request,status,error){
+          console.log( "code:"+request.status+"\n"+"message:"+request.responseText+"\n"+"error:"+error);
+      });
+    }
+    function _get_result_url(){
+      let param = url.href + '?result';
+      $.each(quizSelectData, function(key, val){
+        param += '&' + key + '=' + val;
+      });
+      return param;
+    }
+    function _draw_info_bar(ctx, x0, y0, dx, dy){
+      let bgColor = '#CE93D8';
+      let txColor = '#000000';
+      let subtxColor = 'rgba(0,0,0,0.5)';
+      let fontsize = dy * 0.4;
+      let subfontsize = dy * 0.2;
+      let padding = 15;
+      // background
+      ctx.fillStyle = bgColor;
+      ctx.fillRect(x0, y0, dx, dy);
+      // version text
+      ctx.fillStyle = subtxColor;
+      ctx.textAlign="right";
+      ctx.textBaseline="top";
+      ctx.font = 'bold '+subfontsize+'px "Gothic A1"';
+      ctx.fillText("soma0sd@freethinkers-kr", x0 + dx - padding, y0 + padding);
+      ctx.fillText(version, x0 + dx - padding, y0 + subfontsize + padding);
+      // title text
+      ctx.fillStyle = txColor;
+      ctx.textAlign="left";
+      ctx.textBaseline="bottom";
+      ctx.font = 'bold '+fontsize+'px "Gothic A1"';
+      ctx.fillText("결과", x0 + padding, y0 + dy - padding);
+    }
+    function _draw_values_bar(ctx, x0, y0, dx, dy, key, val){
+      let img = new Image();
+      img.src = 'img/' + key + '.png';
+      let scale, hx, hy;
+      // bar background
+      ctx.shadowBlur = 10;
+      ctx.shadowColor = '#000';
+      ctx.shadowOffsetY = 2;
+      ctx.shadowOffsetX = 2;
+      ctx.fillStyle = '#EEEEEE';
+      ctx.fillRect(x0, y0, dx, dy);
+      ctx.shadowBlur = 0;
+      ctx.shadowOffsetY = 0;
+      ctx.shadowOffsetX = 0;
+      // bar thumb
+      ctx.globalAlpha = 0.8;
+      ctx.fillStyle = val.color;
+      ctx.fillRect(x0, y0, dx * val.ratio, dy);
+      ctx.globalAlpha = 1;
+      // logo image
+      ctx.shadowBlur = 10;
+      ctx.shadowColor = '#000';
+      ctx.shadowOffsetY = 2;
+      ctx.shadowOffsetX = 2;
+      ctx.fillStyle = '#FFFFFF';
+      ctx.lineWidth = 20;
+      ctx.strokeStyle = val.color;
+      ctx.beginPath();
+      ctx.arc(x0, y0+(dy/2), dy/2, 0, Math.PI*2, false);
+      ctx.fill();
+      ctx.stroke();
+      ctx.shadowBlur = 0;
+      ctx.shadowOffsetY = 0;
+      ctx.shadowOffsetX = 0;
+      img.onload = function(){
+        if(img.height >= img.width){
+          scale = dy / img.height * 0.9;
+          idx = img.width * scale;
+          idy = img.height * scale;
+          ix0 = x0 - (dy * 0.45) + (idy - idx) / 2;
+          iy0 = y0;
+        } else {
+          scale = dy / img.width * 0.9;
+          idx = img.width * scale;
+          idy = img.height * scale;
+          ix0 = x0 - dy * 0.45;
+          iy0 = y0 + (idx - idy) / 2;
+        }
+        ctx.drawImage(img, ix0, iy0 ,idx, idy);
+      };
+      // text draw
+      ctx.shadowBlur = 10;
+      ctx.shadowColor = '#333';
+      ctx.shadowOffsetY = 2;
+      ctx.shadowOffsetX = 2;
+      ctx.fillStyle = '#FFFFFF';
+      ctx.font = 'bold '+(dy*0.4)+'px "Gothic A1"';
+      ctx.textAlign="left";
+      ctx.textBaseline="bottom";
+      ctx.strokeStyle = val.color;
+      ctx.lineWidth = 5;
+      ctx.strokeText(val.name, x0 + (dy/4), y0 + (dy));
+      ctx.fillText(val.name, x0 + (dy/4), y0 + (dy));
+      ctx.shadowBlur = 0;
+      ctx.shadowOffsetY = 0;
+      ctx.shadowOffsetX = 0;
+      if(val.ratio > 0.8) {
+        ctx.fillStyle = '#FFFFFF';
+      } else {
+        ctx.fillStyle = '#000000';
+      }
+      ctx.lineWidth = 3;
+      ctx.textAlign = "right";
+      ctx.textBaseline = "middle";
+      ctx.shadowBlur = 4
+      ;
+      ctx.shadowColor = val.color;
+      ctx.shadowOffsetY = 2;
+      ctx.shadowOffsetX = 2;
+      ctx.strokeText((val.ratio * 100).toFixed(1) + "%", x0 + dx - (dy/6), y0 + (dy/2));
+      ctx.fillText((val.ratio * 100).toFixed(1) + "%", x0 + dx - (dy/6), y0 + (dy/2));
+      ctx.shadowBlur = 0;
+      ctx.lineWidth = 0;
+      ctx.shadowOffsetY = 0;
+      ctx.shadowOffsetX = 0;
+    }
+
+  } // End Plugin: S0 Quiz
+}(jQuery)); // Exit jQuery Plugin
