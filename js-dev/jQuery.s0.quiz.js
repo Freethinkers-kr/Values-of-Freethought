@@ -173,7 +173,9 @@
       $navReturn = _create_element('a', opt.id.navReturn, $nav);
       $navReturn.addClass('s0-btn');
       $navReturn.html('처음으로');
-      $navReturn.attr('href', url.origin);
+      let href = url.origin;
+      if(url.pathname){href += url.pathname}
+      $navReturn.attr('href', href);
       $shareFB = _create_element('a', opt.id.shareFB, $nav);
       $shareFB.addClass('s0-btn');
       $shareFB.html('페이스북 공유');
