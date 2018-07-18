@@ -1,6 +1,5 @@
 (function($){
   $.fn.S0Quiz = function(json_url, options){
-    var version = 'v0.10f';
     var opt = $.extend({
       id: {
         wrapper: '#s0-quiz-warp',
@@ -93,7 +92,7 @@
 
       $wrapper = _create_element('div', opt.id.content, $container);
       $title   = _create_element('h1', opt.id.title, $wrapper);
-      $desc    = _create_element('p', opt.id.desc, $wrapper);
+      $desc    = _create_element('div', opt.id.desc, $wrapper);
       $radio   = _create_element('div', opt.id.radio, $wrapper);
       $radio.css('font-family', '"Material Icons"');
       for(let i=0; i < 5; i++){
@@ -171,6 +170,11 @@
       $canvas  = _create_element('canvas', opt.id.canvas, $wrapper);
       $nav = _create_element('div', opt.id.navbar, $container);
       $navReturn = _create_element('a', opt.id.navReturn, $nav);
+      $wrapper.append('<p style="padding: 0.5rem">'+quizData.meta.resultMsg+'</p>');
+      $.each(valuesData, function(key, val){
+        $wrapper.append('<h2 style="padding: 0.5rem">' + val.name + '</h2>');
+        $wrapper.append('<p style="padding: 0.5rem">' + val.desc + '</p>');
+      });
       $navReturn.addClass('s0-btn');
       $navReturn.html('처음으로');
       let href = url.origin;
@@ -186,7 +190,8 @@
       let counter = 0;
       $.each(quizData.values, function(key, val){
         valuesData[key] = {};
-        valuesData[key]['name'] = val;
+        valuesData[key]['name'] = val.name;
+        valuesData[key]['desc'] = val.desc;
         valuesData[key]['point'] = 0;
         valuesData[key]['max'] = 0;
         valuesData[key]['ratio'] = 0;
@@ -221,6 +226,7 @@
           msg += val.name + ': '
           msg += (val.ratio * 100).toFixed(1) + ' %\n' ;
         });
+        msg += quizData.meta.resultMsg;
         if(isDebug){
           href = 'https://freethinkers-kr.github.io/';
           href += 'Values-of-Freethought/';
@@ -346,8 +352,8 @@
       ctx.textAlign="right";
       ctx.textBaseline="top";
       ctx.font = 'bold '+subfontsize+'px "Gothic A1"';
-      ctx.fillText("soma0sd@freethinkers-kr", x0 + dx - padding, y0 + padding);
-      ctx.fillText(version, x0 + dx - padding, y0 + subfontsize + padding);
+      ctx.fillText(quizData.meta.author, x0 + dx - padding, y0 + padding);
+      ctx.fillText(quizData.meta.version, x0 + dx - padding, y0 + subfontsize + padding);
       // title text
       ctx.fillStyle = txColor;
       ctx.textAlign="left";
@@ -429,8 +435,7 @@
       ctx.lineWidth = 3;
       ctx.textAlign = "right";
       ctx.textBaseline = "middle";
-      ctx.shadowBlur = 4
-      ;
+      ctx.shadowBlur = 4;
       ctx.shadowColor = val.color;
       ctx.shadowOffsetY = 2;
       ctx.shadowOffsetX = 2;
