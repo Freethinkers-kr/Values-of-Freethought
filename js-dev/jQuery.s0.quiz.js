@@ -226,7 +226,8 @@
           msg += val.name + ': '
           msg += (val.ratio * 100).toFixed(1) + ' %\n' ;
         });
-        msg += quizData.meta.resultMsg;
+        msg += '\n 현재 버전: ' + quizData.meta.version + '\n';
+        msg += '\n' + quizData.meta.resultMsg;
         if(isDebug){
           href = 'https://freethinkers-kr.github.io/';
           href += 'Values-of-Freethought/';
