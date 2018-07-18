@@ -83,7 +83,12 @@ $btn-selected-tx-color: rgba(#FFF, 0.85);
     background: $nav-btn-bg-color;
     margin: 0.5rem;
   }
-  #s0-quiz-nav-next { float: right }
+  #s0-quiz-nav-next {
+    float: right;
+    &.disable {
+      background: #BDBDBD;
+    }
+  }
   #s0-quiz-nav-prev { float: left }
   #s0-quiz-nav-result {
     float: right; background: #424242;
