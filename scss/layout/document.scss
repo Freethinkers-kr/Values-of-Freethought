@@ -1,14 +1,16 @@
 // main: ../style.scss
 body {
   font-family: 'Gothic A1', sans-serif;
-  background: #EEEEEE;
+  background: #FFFFFF;
+  @include media(s){
+    background: #EEEEEE;
+  }
 }
 article {
   position: fixed;
   background: #FAFAFA;
   left: 0; top: 0;
   width: 100vw;
-  height: 100%;
   @include media(s){
     left: calc(50% - 275px); width: 550px;
     top: calc(50% - 200px); height: 400px;

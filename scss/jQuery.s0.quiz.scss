@@ -73,9 +73,12 @@ $btn-selected-tx-color: rgba(#FFF, 0.85);
   }
 }
 #s0-quiz-nav {
-  position: absolute;
+  position: fixed;
   bottom: 0; left: 0; right: 0;
   background: $nav-bg-color;
+  @media (min-width: 600px){
+    position: absolute;
+  }
   .s0-btn {
     background: $nav-btn-bg-color;
     margin: 0.5rem;
